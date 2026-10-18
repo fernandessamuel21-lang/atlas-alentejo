@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="pt-PT">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="color-scheme" content="light dark" />
+    <meta
+      name="theme-color"
+      content="#f7f5f0"
+      media="(prefers-color-scheme: light)"
+    />
+    <meta
+      name="theme-color"
+      content="#1b1d1c"
+      media="(prefers-color-scheme: dark)"
+    />
+    <meta
+      name="description"
+      content="Explore o relevo e as massas de água do Sado, Mira e Guadiana num atlas tridimensional interativo."
+    />
+    <title>Atlas Alentejo — Território e Água</title>
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script type="module" src="vendor/model-viewer.min.js"></script>
+    <script defer src="vendor/proj4.js"></script>
+    <script defer src="geo.js"></script>
+    <script defer src="app.js"></script>
+  </head>
+  <body>
+    <a class="skip" href="#explorar">Saltar para o atlas</a>
+    <header class="masthead">
+      <a class="brand" href="./" aria-label="Atlas Alentejo, início"
+        ><svg viewBox="0 0 40 44" aria-hidden="true">
+          <path d="m20 2 16 9v22l-16 9L4 33V11Z" />
+          <path
+            d="m4 25 10-7 9 5 13-9M4 32l12-8 9 5 11-7M10 8l10 6 10-6"
+          /></svg
+        ><span>ATLAS <strong>ALENTEJO</strong></span></a
+      >
+      <h1 class="map-title">
+        <span class="map-title-kicker"
+          >Relevo e hidrografia<span class="sr-only">:</span></span
+        >
+        <span id="mapTitle">Sado, Mira e Guadiana</span>
+      </h1>
+      <div class="masthead-actions">
+        <button type="button" id="aboutOpen" class="about-open">
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <circle cx="10" cy="10" r="7.5" />
+            <path d="M10 9v5M10 6.2v.1" /></svg
+          ><span>Sobre os dados</span>
+        </button>
+        <button
+          id="panelToggle"
+          class="panel-toggle"
+          type="button"
+          aria-controls="controlPanel"
+          aria-expanded="true"
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M3 5h14M3 10h14M3 15h14M7 3v4M13 8v4M8 13v4" /></svg
+          ><span>Explorar</span>
+        </button>
+      </div>
+    </header>
+    <main id="explorar" class="workspace">
+      <aside
+        id="controlPanel"
+        class="sidebar"
+        aria-label="Controlos e legenda do atlas"
+      >
+        <div class="search-wrap">
+          <label class="sr-only" for="search"
+            >Pesquisar locais ou massas de água</label
+          ><svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="10.5" cy="10.5" r="6.5" />
+            <path d="m16 16 5 5" /></svg
+          ><input
+            id="search"
+            type="search"
+            placeholder="Pesquisar um local ou rio…"
+            autocomplete="off"
+            disabled
+            aria-controls="results"
+          /><kbd aria-hidden="true">/</kbd>
+          <div
+            id="results"
+            class="search-results"
+            hidden
+            aria-label="Resultados da pesquisa"
+          ></div>
+          <span id="searchCount" class="sr-only" role="status"></span>
+        </div>
+        <section class="section">
+          <h2><span class="section-number">01</span> Região hidrográfica</h2>
+          <div class="seg regions" role="group" aria-label="Filtrar por região">
+            <button
+              type="button"
+              data-region="all"
+              aria-pressed="true"
+              disabled
+            >
+              Todas</button
+            ><button
+              type="button"
+              data-region="PTRH6"
+              aria-pressed="false"
+              disabled
+            >
+              RH6 <small>Sado e Mira</small></button
+            ><button
+              type="button"
+              data-region="PTRH7"
+              aria-pressed="false"
+              disabled
+            >
+              RH7 <small>Guadiana</small>
+            </button>
+          </div>
+        </section>
+        <section class="section">
+          <h2><span class="section-number">02</span> Leitura do território</h2>
+          <div class="seg basemap" role="group" aria-label="Fundo do mapa">
+            <button type="button" data-base="relevo" aria-pressed="true" disabled>
+              Relevo <small>hipsométrico</small></button
+            ><button type="button" data-base="orto" aria-pressed="false" disabled>
+              Ortoimagem <small>OrtoSat 2023</small>
+            </button>
+          </div>
+          <div class="overlays">
+            <label
+              ><span><i class="key-line"></i> Rios</span
+              ><input type="checkbox" id="showRivers" checked disabled /></label
+            ><label
+              ><span><i class="key-water"></i> Albufeiras e estuários</span
+              ><input type="checkbox" id="showLakes" checked disabled /></label
+            ><label
+              ><span><i class="key-boundary"></i> Limites hidrográficos</span
+              ><input type="checkbox" id="showBounds" checked disabled /></label
+            >
+          </div>
+          <div class="overlays pin-controls" role="group" aria-label="Pontos e etiquetas">
+            <p class="layer-caption">Pontos e etiquetas</p>
+            <label><span><i class="key-pin key-reservoir-pin"></i> Pontos das albufeiras</span><input type="checkbox" id="showReservoirPins" checked disabled /></label>
+            <label class="label-control"><span>Etiquetas das albufeiras</span><input type="checkbox" id="showReservoirLabels" disabled /></label>
+            <label><span><i class="key-pin"></i> Principais locais</span><input type="checkbox" id="showPlaces" checked disabled /></label>
+            <label class="label-control"><span>Etiquetas dos locais</span><input type="checkbox" id="showPlaceLabels" disabled /></label>
+          </div>
+        </section>
+        <section
+          class="section water-separation"
+          aria-labelledby="separationTitle"
+        >
+          <div class="separation-heading">
+            <h2 id="separationTitle">Vista em camadas</h2>
+            <label class="detach-toggle"
+              ><span>Elevar a água</span
+              ><input id="detachWater" type="checkbox" disabled
+            /></label>
+          </div>
+          <div id="liftControls" hidden>
+            <div class="lift-control">
+              <label for="riverLift"
+                >Rios
+                <output id="riverLiftOut" for="riverLift">0%</output></label
+              >
+              <input
+                id="riverLift"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value="0"
+                disabled
+              />
+            </div>
+            <div class="lift-control">
+              <label for="lakeLift"
+                >Albufeiras e estuários
+                <output id="lakeLiftOut" for="lakeLift">0%</output></label
+              >
+              <input
+                id="lakeLift"
+                type="range"
+                min="0"
+                max="100"
+                step="5"
+                value="0"
+                disabled
+              />
+            </div>
+            <p class="fine">
+              As camadas elevadas têm contorno para facilitar a leitura. A
+              separação é visual e mantém-se ao alterar o exagero vertical; as
+              cotas reais não mudam.
+            </p>
+            <button
+              id="settleWater"
+              class="settle-water"
+              type="button"
+              disabled
+            >
+              Assentar no terreno <span aria-hidden="true">↓</span>
+            </button>
+          </div>
+        </section>
+        <section class="section legend" aria-label="Legenda">
+          <div id="legendOrto" hidden>
+            <div class="legend-heading">
+              <h2>Ortoimagem</h2>
+              <span>40 m</span>
+            </div>
+            <p class="fine">
+              OrtoSat 2023, cor verdadeira, © Direção-Geral do Território. Com
+              sombreado suave do MDS.
+            </p>
+          </div>
+          <div id="legendRelief">
+            <div class="legend-heading">
+              <h2>Altitude</h2>
+              <span>metros</span>
+            </div>
+            <div
+              class="ramp"
+              role="img"
+              aria-label="Cores de altitude, de 0 a 1000 metros, em patamares não lineares"
+            ></div>
+            <div class="ticks" aria-hidden="true">
+              <span>0</span><span>80</span><span>160</span><span>240</span
+              ><span>350</span><span>1 000</span>
+            </div>
+          </div>
+        </section>
+        <section class="section exaggeration">
+          <div class="legend-heading">
+            <label for="exaggeration">Exagero vertical</label
+            ><output id="exaggerationOut" for="exaggeration">20×</output>
+          </div>
+          <input
+            id="exaggeration"
+            type="range"
+            min="1"
+            max="40"
+            step="1"
+            value="20"
+            disabled
+          />
+          <div class="range-labels">
+            <span>Escala real · 1×</span><span>40×</span>
+          </div>
+        </section>
+        <div class="sidebar-footer">
+          <div class="metrics">
+            <div>
+              <strong id="waterCount">—</strong><span>massas de água</span>
+            </div>
+            <div>
+              <strong id="riverLength">—</strong><span>km de rios</span>
+            </div>
+          </div>
+          <p>
+            <i class="source-dot"></i> Copernicus GLO-30 <span>·</span> EEA WISE
+            2022
+          </p>
+        </div>
+      </aside>
+      <section class="map-area" aria-label="Mapa tridimensional">
+        <div id="stage" class="stage">
+          <model-viewer
+            id="mv"
+            animation-name="separar_agua"
+            src="modelo/arh_alentejo.glb"
+            ios-src="modelo/arh_alentejo.usdz"
+            alt="Modelo tridimensional do relevo das regiões hidrográficas portuguesas do Sado e Mira e do Guadiana"
+            camera-controls
+            touch-action="pan-y"
+            camera-orbit="0deg 38deg 90%"
+            min-camera-orbit="auto 0deg 0.02m"
+            max-camera-orbit="auto 88deg auto"
+            field-of-view="28deg"
+            shadow-intensity="0.6"
+            shadow-softness="1"
+            exposure="1"
+            environment-image="neutral"
+            interaction-prompt="none"
+            interpolation-decay="120"
+            ar
+            ar-modes="webxr scene-viewer quick-look"
+            ar-scale="fixed"
+            ar-placement="floor"
+          >
+            <button
+              slot="ar-button"
+              class="ar-button"
+              type="button"
+              title="Em AR, as camadas e o exagero podem diferir da vista no browser"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9Z" />
+                <path d="m4 7.5 8 5 8-5M12 12.5V21" />
+              </svg>
+              Ver no seu espaço
+            </button>
+          </model-viewer>
+          <div class="map-hint" id="mapHint">
+            <span class="hint-dot"></span> Arraste para explorar
+            <span>·</span> Toque para consultar
+          </div>
+          <div class="loading" id="loading" role="status">
+            <span class="loading-icon" aria-hidden="true"></span
+            ><strong>A preparar o território</strong
+            ><span id="loadingText">A carregar o modelo 3D…</span
+            ><progress
+              id="loadProgress"
+              max="1"
+              value="0"
+              aria-label="Carregamento do modelo"
+            ></progress>
+          </div>
+          <div class="notice" id="notice" hidden role="alert">
+            <p id="noticeText"></p>
+            <button id="retry" type="button">Tentar novamente</button>
+          </div>
+          <article
+            id="infoCard"
+            class="info-card"
+            hidden
+            aria-labelledby="infoTitle"
+          >
+            <button
+              id="cardClose"
+              type="button"
+              class="close"
+              aria-label="Fechar informação"
+            >
+              ×
+            </button>
+            <p id="infoKind" class="eyebrow"></p>
+            <h3 id="infoTitle"></h3>
+            <p id="infoDescription"></p>
+            <dl id="infoDetails"></dl>
+            <p id="infoNote" class="fine"></p>
+          </article>
+          <div class="map-tools">
+            <button
+              id="north"
+              class="north-button"
+              type="button"
+              aria-label="Orientar para norte"
+              title="Orientar para norte"
+            >
+              <span>N</span
+              ><svg id="northArrow" viewBox="0 0 28 32" aria-hidden="true">
+                <path d="m14 3 10 25-10-6L4 28Z" />
+                <path d="M14 3v19" />
+              </svg>
+            </button>
+            <div class="zoom-tools">
+              <button id="zoomIn" type="button" aria-label="Aproximar" disabled>
+                +</button
+              ><button id="zoomOut" type="button" aria-label="Afastar" disabled>
+                −
+              </button>
+            </div>
+          </div>
+          <div
+            class="view-toolbar"
+            role="group"
+            aria-label="Controlos da vista"
+          >
+            <button id="viewOblique" type="button" aria-pressed="true" disabled>
+              Perspetiva</button
+            ><button id="viewTop" type="button" aria-pressed="false" disabled>
+              De cima</button
+            ><span></span
+            ><button id="rotate" type="button" aria-pressed="false" disabled>
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M16 7a6.5 6.5 0 1 0 .2 6M16 2v5h-5" /></svg
+              ><span>Rodar</span></button
+            ><button
+              id="reset"
+              type="button"
+              aria-label="Repor vista inicial"
+              title="Repor vista inicial"
+              disabled
+            >
+              <svg viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M4 8a6 6 0 1 1 .5 5M4 3v5h5" />
+              </svg>
+            </button>
+          </div>
+          <div class="map-caption">
+            <span id="resolution">MDS 30 m · malha 600 m</span
+            ><span class="texture-state" id="textureState" role="status"></span>
+          </div>
+        </div>
+      </section>
+    </main>
+    <dialog id="aboutDialog" aria-labelledby="aboutTitle">
+      <div class="dialog-header">
+        <span class="eyebrow">O ATLAS / NOTA METODOLÓGICA</span
+        ><button
+          id="aboutClose"
+          class="close"
+          type="button"
+          aria-label="Fechar sobre os dados"
+        >
+          ×
+        </button>
+      </div>
+      <h2 id="aboutTitle">Conhecer o território.<br />Compreender a água.</h2>
+      <p>
+        Uma exploração tridimensional das regiões hidrográficas do Sado e Mira
+        (RH6) e do Guadiana em Portugal (RH7).
+      </p>
+      <div class="about-facts" id="aboutFacts"></div>
+      <h3>Como ler este atlas</h3>
+      <p>
+        O Copernicus GLO-30 é um
+        <strong>modelo digital de superfície (MDS)</strong>: inclui a influência
+        de vegetação e edifícios. Os dados têm resolução de 30 m; a malha 3D é
+        simplificada. A altitude ao tocar no terreno é interpolada na malha e
+        serve para exploração, não para levantamentos topográficos ou estudos
+        hidráulicos.
+      </p>
+      <p>
+        As altitudes dos locais de referência são amostradas no raster a 30 m. O
+        marcador da altitude máxima é colocado no máximo da malha simplificada;
+        a localização do máximo do raster pode ser diferente.
+      </p>
+      <h3>Massas de água</h3>
+      <p>
+        Os limites e as massas de água provêm do EEA WISE, reporte DQA 2022. O
+        atlas representa rios, lagos e albufeiras, águas de transição e águas
+        costeiras. As contagens referem-se a massas de água identificadas nesse
+        reporte.
+      </p>
+      <h3>Separação das camadas de água</h3>
+      <p>
+        A vista em camadas permite elevar os rios e as albufeiras/estuários de
+        forma independente. A separação é ilustrativa e não altera as altitudes
+        nem representa níveis de água. As geometrias acompanham o relevo
+        disponível; a largura dos rios é ampliada para facilitar a leitura. A
+        exportação USDZ mantém a vista assente.
+      </p>
+      <h3>Escala e realidade aumentada</h3>
+      <p id="arMethod">
+        O maior lado do modelo mede 60 cm. O exagero vertical torna visíveis as
+        diferenças de altitude. As aplicações externas de AR podem apresentar as
+        camadas e o exagero da versão exportada, em vez das opções escolhidas no
+        browser.
+      </p>
+      <h3>Fontes e créditos</h3>
+      <p>
+        Copernicus DEM GLO-30 © DLR e.V. 2010–2014 e © Airbus Defence and Space
+        GmbH 2014–2018, fornecido no âmbito do programa Copernicus pela União
+        Europeia e ESA. Limites e massas de água: Agência Europeia do Ambiente,
+        EEA WISE WFD 2022. Ortoimagem: OrtoSat 2023 © Direção-Geral do
+        Território (DGT), reamostrada a 40 m.
+      </p>
+      <div class="download-links">
+        <a href="modelo/arh_alentejo.glb" download
+          >Descarregar GLB <span>↓</span></a
+        ><a href="modelo/arh_alentejo.usdz" download
+          >Descarregar USDZ <span>↓</span></a
+        ><a href="modelo/dados.json" download
+          >Dados do atlas · JSON <span>↓</span></a
+        >
+      </div>
+      <p class="fine">
+        Atlas de exploração. Sem afiliação institucional implícita.
+      </p>
+    </dialog>
+    <noscript
+      ><div class="noscript">
+        Ative o JavaScript para explorar o atlas. Pode
+        <a href="modelo/arh_alentejo.glb" download>descarregar o modelo 3D</a>.
+      </div></noscript
+    >
+  </body>
+</html>
