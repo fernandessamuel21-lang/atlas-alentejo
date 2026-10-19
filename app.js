@@ -33,6 +33,7 @@
   let D,
     images,
     basemap = "relevo",
+    inAR = false,
     region = "all",
     k = 1,
     pins = [],
@@ -219,6 +220,13 @@
     }
   }
   $("retry").addEventListener("click", () => location.reload());
+  mv.addEventListener("ar-status", (event) => {
+    const active = event.detail.status === "session-started";
+    if (active === inAR) return;
+    inAR = active;
+    if (inAR) clearSelection();
+    updatePins();
+  });
   // As camadas 3D da água e os seus contornos seguem o tema; no escuro, tons
   // mais claros mantêm o contraste com o terreno esbatido e o fundo.
   async function applyWaterColors() {
@@ -338,6 +346,13 @@
         button.addEventListener(event, scheduleLabels);
       button.addEventListener("click", (e) => {
         e.stopPropagation();
+        if (inAR) {
+          // Em AR a ficha não é visível: tocar no pino mostra ou esconde o nome.
+          const label = button.querySelector(".pin-label");
+          label.hidden = !label.hidden;
+          scheduleLabels();
+          return;
+        }
         focusReturn = button;
         selectPlace(i);
       });
@@ -348,6 +363,16 @@
   }
   function updatePins() {
     if (!D) return;
+    if (inAR) {
+      // Em AR (WebXR) ficam só os pinos das albufeiras, com os nomes escondidos
+      // até se tocar em cada pino, como no modelo USDZ do iPhone.
+      pins.forEach((pin, i) => {
+        pin.hidden = D.locais[i].tipo !== "albufeira";
+        pin.querySelector(".pin-label").hidden = true;
+      });
+      scheduleLabels();
+      return;
+    }
     pins.forEach((pin, i) => {
       const local = D.locais[i];
       const reservoir = local.tipo === "albufeira";
